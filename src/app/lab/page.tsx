@@ -2,119 +2,150 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Atom, Zap, GitBranch, Radio, Cpu, ArrowRight } from 'lucide-react'
+import { Cpu, Zap, GitBranch, Radio, Atom, ArrowRight, Play } from 'lucide-react'
 
-const experiments = [
+const tools = [
   {
     id: 'circuit-composer',
-    title: 'Quantum Circuit Composer',
-    description: 'Build and simulate photonic quantum circuits with drag-and-drop gates',
+    title: 'Circuit Composer',
+    description: 'Build and simulate quantum circuits with drag-and-drop gates',
     icon: Cpu,
-    color: 'from-blue-500 to-cyan-500',
     href: '/lab/circuit-composer',
+    featured: true,
   },
   {
     id: 'photon-simulator',
     title: 'Photon Simulator',
-    description: 'Visualize single photons, interference patterns, and wave-particle duality',
+    description: 'Visualize wave-particle duality and quantum interference',
     icon: Zap,
-    color: 'from-violet-500 to-purple-500',
     href: '/lab/photon-simulator',
+    featured: true,
   },
+]
+
+const experiments = [
   {
     id: 'bell-pairs',
     title: 'Bell Pair Generator',
-    description: 'Create and measure entangled photon pairs using the EIP-002 protocol',
+    description: 'Create maximally entangled photon pairs',
     icon: GitBranch,
-    color: 'from-pink-500 to-rose-500',
     href: '/lab/experiments/bell-pairs',
+    difficulty: 'Intermediate',
+    protocol: 'EIP-002',
   },
   {
     id: 'teleportation',
     title: 'Quantum Teleportation',
-    description: 'Teleport quantum states using the EIP-004 protocol',
+    description: 'Transfer quantum states across distances',
     icon: Radio,
-    color: 'from-amber-500 to-orange-500',
     href: '/lab/experiments/teleportation',
-  },
-  {
-    id: 'nv-center',
-    title: 'NV-Center Simulation',
-    description: 'Explore diamond nitrogen-vacancy centers for quantum memory',
-    icon: Atom,
-    color: 'from-green-500 to-emerald-500',
-    href: '/lab/experiments/nv-center',
+    difficulty: 'Advanced',
+    protocol: 'EIP-004',
   },
   {
     id: 'ghz-states',
     title: 'GHZ State Generator',
-    description: 'Create multi-qubit entanglement with Greenberger-Horne-Zeilinger states',
+    description: 'Create multi-qubit entangled states',
     icon: GitBranch,
-    color: 'from-indigo-500 to-blue-500',
     href: '/lab/experiments/ghz-states',
+    difficulty: 'Advanced',
+    protocol: 'EIP-003',
+  },
+  {
+    id: 'nv-center',
+    title: 'NV-Center Simulation',
+    description: 'Diamond nitrogen-vacancy center experiments',
+    icon: Atom,
+    href: '/lab/experiments/nv-center',
+    difficulty: 'Expert',
+    protocol: 'EIP-001',
   },
 ]
 
+const difficultyBadge = (level: string) => {
+  switch (level) {
+    case 'Beginner': return 'badge-beginner'
+    case 'Intermediate': return 'badge-intermediate'
+    case 'Advanced': return 'badge-advanced'
+    case 'Expert': return 'badge-expert'
+    default: return 'badge-beginner'
+  }
+}
+
 export default function LabPage() {
   return (
-    <div className="min-h-screen px-6 py-12">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="bg-gradient-to-r from-quantum-primary to-quantum-accent bg-clip-text text-transparent">
-              Virtual Quantum Lab
-            </span>
-          </h1>
-          <p className="text-xl text-white/70 max-w-2xl mx-auto">
-            Explore photonic quantum computing through interactive experiments
-          </p>
-        </motion.div>
+    <div className="p-8">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Virtual Lab</h1>
+        <p className="text-white/60">
+          Explore photonic quantum computing through interactive simulations
+        </p>
+      </div>
 
-        {/* Quick Access */}
-        <div className="flex flex-wrap justify-center gap-4 mb-12">
-          <Link href="/lab/circuit-composer">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-6 py-3 bg-gradient-to-r from-quantum-primary to-quantum-accent rounded-xl font-semibold text-white flex items-center gap-2"
-            >
-              <Cpu className="w-5 h-5" /> Open Circuit Composer
-            </motion.button>
-          </Link>
-          <Link href="/lab/photon-simulator">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-6 py-3 glass-panel font-semibold text-white flex items-center gap-2"
-            >
-              <Zap className="w-5 h-5" /> Photon Simulator
-            </motion.button>
-          </Link>
-        </div>
-
-        {/* Experiments Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {experiments.map((exp, i) => (
+      {/* Featured Tools */}
+      <section className="mb-12">
+        <h2 className="section-subheader">Tools</h2>
+        <div className="grid md:grid-cols-2 gap-4">
+          {tools.map((tool, i) => (
             <motion.div
-              key={exp.id}
-              initial={{ opacity: 0, y: 20 }}
+              key={tool.id}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
             >
-              <Link href={exp.href}>
-                <div className="glass-panel p-6 h-full hover:bg-white/10 transition-all duration-300 group cursor-pointer">
-                  <div className={`w-14 h-14 rounded-xl bg-gradient-to-r ${exp.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                    <exp.icon className="w-7 h-7 text-white" />
+              <Link href={tool.href}>
+                <div className="card p-6 h-full group">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#455DEC] to-[#00D4FF] flex items-center justify-center">
+                      <tool.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <motion.div
+                      className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      whileHover={{ scale: 1.1 }}
+                    >
+                      <Play className="w-4 h-4 text-white" />
+                    </motion.div>
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">{exp.title}</h3>
-                  <p className="text-white/60 mb-4">{exp.description}</p>
-                  <div className="flex items-center text-quantum-accent">
-                    <span className="text-sm">Start Experiment</span>
+                  <h3 className="text-xl font-semibold mb-2">{tool.title}</h3>
+                  <p className="text-white/60 text-sm">{tool.description}</p>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Experiments */}
+      <section>
+        <h2 className="section-subheader">Experiments</h2>
+        <div className="grid md:grid-cols-2 gap-4">
+          {experiments.map((exp, i) => (
+            <motion.div
+              key={exp.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 + i * 0.1 }}
+            >
+              <Link href={exp.href}>
+                <div className="experiment-card group">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center">
+                        <exp.icon className="w-5 h-5 text-[#455DEC]" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{exp.title}</h3>
+                        <span className="text-xs text-white/40">{exp.protocol}</span>
+                      </div>
+                    </div>
+                    <span className={difficultyBadge(exp.difficulty)}>
+                      {exp.difficulty}
+                    </span>
+                  </div>
+                  <p className="text-white/60 text-sm mb-4">{exp.description}</p>
+                  <div className="flex items-center text-[#455DEC] text-sm">
+                    <span>Start experiment</span>
                     <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
@@ -122,29 +153,24 @@ export default function LabPage() {
             </motion.div>
           ))}
         </div>
+      </section>
 
-        {/* Real Hardware Section */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-16"
-        >
-          <div className="glass-panel p-8 quantum-glow">
-            <h2 className="text-2xl font-bold mb-4">Run on Real Quantum Hardware</h2>
-            <p className="text-white/70 mb-6">
-              Connect to IBM Quantum, IonQ, or other providers to run your experiments on actual quantum computers
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <div className="px-4 py-2 rounded-lg bg-white/10 text-sm">IBM Quantum</div>
-              <div className="px-4 py-2 rounded-lg bg-white/10 text-sm">IonQ</div>
-              <div className="px-4 py-2 rounded-lg bg-white/10 text-sm">Amazon Braket</div>
-              <div className="px-4 py-2 rounded-lg bg-white/10 text-sm">Azure Quantum</div>
-              <div className="px-4 py-2 rounded-lg bg-white/10 text-sm">Quandela</div>
-            </div>
+      {/* Hardware Info */}
+      <section className="mt-12">
+        <div className="card p-6">
+          <h3 className="font-semibold mb-3">Supported Quantum Hardware</h3>
+          <p className="text-white/60 text-sm mb-4">
+            Run experiments on real quantum computers from leading providers
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {['IBM Quantum', 'IonQ', 'Amazon Braket', 'Azure Quantum', 'Quandela'].map((provider) => (
+              <span key={provider} className="px-3 py-1.5 bg-white/5 rounded-lg text-sm text-white/70">
+                {provider}
+              </span>
+            ))}
           </div>
-        </motion.div>
-      </div>
+        </div>
+      </section>
     </div>
   )
 }

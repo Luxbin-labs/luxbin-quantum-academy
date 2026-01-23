@@ -3,125 +3,195 @@
 @tailwind utilities;
 
 :root {
-  --quantum-primary: #6366f1;
-  --quantum-secondary: #8b5cf6;
-  --quantum-accent: #06b6d4;
-  --quantum-dark: #0f0f23;
-  --quantum-darker: #0a0a1a;
+  --brand-blue: #455DEC;
+  --brand-orange: #F07362;
+  --brand-cyan: #00D4FF;
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-card: #141414;
+  --bg-card-hover: #1a1a1a;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.5);
+  --border-color: rgba(255, 255, 255, 0.1);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--quantum-darker);
-  color: #e0e7ff;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
 }
 
-/* Glassmorphic panels */
-.glass-panel {
-  @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;
-}
-
-/* Photon trail effect */
-.photon-trail {
-  position: relative;
-  overflow: hidden;
-}
-
-.photon-trail::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(99, 102, 241, 0.3),
-    transparent
-  );
-  animation: photon-flow 3s linear infinite;
-}
-
-/* Quantum glow effect */
-.quantum-glow {
-  box-shadow:
-    0 0 20px rgba(99, 102, 241, 0.3),
-    0 0 40px rgba(139, 92, 246, 0.2),
-    0 0 60px rgba(6, 182, 212, 0.1);
-}
-
-/* Circuit path styling */
-.circuit-path {
-  stroke: var(--quantum-accent);
-  stroke-width: 2;
-  fill: none;
-  stroke-linecap: round;
-}
-
-/* Qubit visualization */
-.qubit {
-  @apply w-12 h-12 rounded-full flex items-center justify-center font-mono text-sm;
-  background: radial-gradient(circle at 30% 30%, #6366f1, #4f46e5);
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
-}
-
-.qubit-superposition {
-  animation: quantum-spin 2s linear infinite;
-}
-
-/* Certificate styling */
-.certificate {
-  background: linear-gradient(135deg, #1a1a3e 0%, #0f0f23 100%);
-  border: 2px solid;
-  border-image: linear-gradient(135deg, #6366f1, #06b6d4) 1;
-}
-
-/* Progress bar */
-.progress-bar {
-  @apply h-2 rounded-full bg-white/10 overflow-hidden;
-}
-
-.progress-bar-fill {
-  @apply h-full rounded-full transition-all duration-500;
-  background: linear-gradient(90deg, #6366f1, #06b6d4);
-}
-
-/* Quiz option styling */
-.quiz-option {
-  @apply p-4 rounded-xl border-2 border-white/10 cursor-pointer transition-all duration-200;
-}
-
-.quiz-option:hover {
-  @apply border-quantum-primary/50 bg-white/5;
-}
-
-.quiz-option.selected {
-  @apply border-quantum-primary bg-quantum-primary/10;
-}
-
-.quiz-option.correct {
-  @apply border-green-500 bg-green-500/10;
-}
-
-.quiz-option.incorrect {
-  @apply border-red-500 bg-red-500/10;
-}
-
-/* Scrollbar styling */
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.5);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.7);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Layout Components */
+.sidebar {
+  @apply fixed left-0 top-16 bottom-0 w-64 bg-black border-r border-white/10 overflow-y-auto;
+}
+
+.main-content {
+  @apply ml-64 min-h-screen;
+}
+
+.sidebar-link {
+  @apply flex items-center gap-3 px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200;
+}
+
+.sidebar-link.active {
+  @apply text-white bg-white/10 border-l-2 border-[#455DEC];
+}
+
+.sidebar-section {
+  @apply px-4 py-2 text-xs uppercase tracking-wider text-white/40 font-medium;
+}
+
+/* Cards */
+.card {
+  @apply bg-[#141414] rounded-xl border border-white/5 overflow-hidden transition-all duration-300;
+}
+
+.card:hover {
+  @apply bg-[#1a1a1a] border-white/10;
+}
+
+/* Difficulty Badges */
+.badge-beginner {
+  @apply px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-400;
+}
+
+.badge-intermediate {
+  @apply px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-400;
+}
+
+.badge-advanced {
+  @apply px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400;
+}
+
+.badge-expert {
+  @apply px-2 py-0.5 rounded text-xs font-medium bg-purple-500/20 text-purple-400;
+}
+
+/* Buttons */
+.btn-primary {
+  @apply px-6 py-3 bg-[#455DEC] hover:bg-[#3a4fd4] text-white font-medium rounded-lg transition-all duration-200;
+}
+
+.btn-secondary {
+  @apply px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-lg transition-all duration-200;
+}
+
+.btn-orange {
+  @apply px-6 py-3 bg-[#F07362] hover:bg-[#e0635a] text-white font-medium rounded-lg transition-all duration-200;
+}
+
+/* Progress Bar */
+.progress-track {
+  @apply h-1.5 bg-white/10 rounded-full overflow-hidden;
+}
+
+.progress-fill {
+  @apply h-full rounded-full transition-all duration-500;
+  background: linear-gradient(90deg, #455DEC, #00D4FF);
+}
+
+/* Lab Canvas */
+.lab-canvas {
+  @apply bg-[#0a0a0a] rounded-xl border border-white/10;
+}
+
+/* Qubit styling */
+.qubit {
+  @apply w-10 h-10 rounded-full flex items-center justify-center font-mono text-sm font-bold;
+  background: linear-gradient(135deg, #455DEC, #00D4FF);
+  box-shadow: 0 0 20px rgba(69, 93, 236, 0.4);
+}
+
+/* Gate styling */
+.gate {
+  @apply w-12 h-12 rounded-lg flex items-center justify-center font-bold text-white cursor-pointer transition-transform;
+}
+
+.gate:hover {
+  transform: scale(1.05);
+}
+
+/* Experiment card */
+.experiment-card {
+  @apply bg-[#141414] rounded-xl border border-white/5 p-6 hover:border-[#455DEC]/50 transition-all duration-300 cursor-pointer;
+}
+
+.experiment-card:hover {
+  box-shadow: 0 0 30px rgba(69, 93, 236, 0.15);
+}
+
+/* Stats cards */
+.stat-card {
+  @apply bg-[#141414] rounded-xl p-6 border border-white/5;
+}
+
+/* Nav link */
+.nav-link {
+  @apply px-4 py-2 text-white/70 hover:text-white transition-colors duration-200;
+}
+
+.nav-link.active {
+  @apply text-white;
+}
+
+/* Section headers */
+.section-header {
+  @apply text-2xl font-bold mb-6;
+}
+
+.section-subheader {
+  @apply text-lg font-semibold text-white/90 mb-4;
+}
+
+/* Tooltip */
+.tooltip {
+  @apply absolute z-50 px-3 py-2 text-sm bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl;
+}
+
+/* Animation */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(69, 93, 236, 0.4); }
+  50% { box-shadow: 0 0 40px rgba(69, 93, 236, 0.6); }
+}
+
+.animate-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Photon animation */
+@keyframes photon-move {
+  0% { transform: translateX(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+.photon-animated {
+  animation: photon-move 2s linear infinite;
 }
