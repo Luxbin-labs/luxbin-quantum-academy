@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --quantum-primary: #6366f1;
+  --quantum-secondary: #8b5cf6;
+  --quantum-accent: #06b6d4;
+  --quantum-dark: #0f0f23;
+  --quantum-darker: #0a0a1a;
+}
+
+body {
+  background: var(--quantum-darker);
+  color: #e0e7ff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+/* Glassmorphic panels */
+.glass-panel {
+  @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;
+}
+
+/* Photon trail effect */
+.photon-trail {
+  position: relative;
+  overflow: hidden;
+}
+
+.photon-trail::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(99, 102, 241, 0.3),
+    transparent
+  );
+  animation: photon-flow 3s linear infinite;
+}
+
+/* Quantum glow effect */
+.quantum-glow {
+  box-shadow:
+    0 0 20px rgba(99, 102, 241, 0.3),
+    0 0 40px rgba(139, 92, 246, 0.2),
+    0 0 60px rgba(6, 182, 212, 0.1);
+}
+
+/* Circuit path styling */
+.circuit-path {
+  stroke: var(--quantum-accent);
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+}
+
+/* Qubit visualization */
+.qubit {
+  @apply w-12 h-12 rounded-full flex items-center justify-center font-mono text-sm;
+  background: radial-gradient(circle at 30% 30%, #6366f1, #4f46e5);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+}
+
+.qubit-superposition {
+  animation: quantum-spin 2s linear infinite;
+}
+
+/* Certificate styling */
+.certificate {
+  background: linear-gradient(135deg, #1a1a3e 0%, #0f0f23 100%);
+  border: 2px solid;
+  border-image: linear-gradient(135deg, #6366f1, #06b6d4) 1;
+}
+
+/* Progress bar */
+.progress-bar {
+  @apply h-2 rounded-full bg-white/10 overflow-hidden;
+}
+
+.progress-bar-fill {
+  @apply h-full rounded-full transition-all duration-500;
+  background: linear-gradient(90deg, #6366f1, #06b6d4);
+}
+
+/* Quiz option styling */
+.quiz-option {
+  @apply p-4 rounded-xl border-2 border-white/10 cursor-pointer transition-all duration-200;
+}
+
+.quiz-option:hover {
+  @apply border-quantum-primary/50 bg-white/5;
+}
+
+.quiz-option.selected {
+  @apply border-quantum-primary bg-quantum-primary/10;
+}
+
+.quiz-option.correct {
+  @apply border-green-500 bg-green-500/10;
+}
+
+.quiz-option.incorrect {
+  @apply border-red-500 bg-red-500/10;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.7);
+}
