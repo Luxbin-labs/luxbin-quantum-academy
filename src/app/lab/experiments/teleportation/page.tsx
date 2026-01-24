@@ -2,16 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Play, RotateCcw, Info, X, Send } from 'lucide-react'
-
-interface TeleportationState {
-  phase: 'idle' | 'entangle' | 'encode' | 'measure' | 'send' | 'reconstruct' | 'complete'
-  qubitState: { alpha: number; beta: number }
-  alicePhoton: { x: number; y: number }
-  bobPhoton: { x: number; y: number }
-  classicalBits: string
-  success: boolean
-}
+import { RotateCcw, Info, X, Send } from 'lucide-react'
 
 interface Particle {
   x: number
@@ -25,17 +16,20 @@ interface Particle {
 export default function TeleportationPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const animationRef = useRef<number | null>(null)
-  const [state, setState] = useState<TeleportationState>({
-    phase: 'idle',
-    qubitState: { alpha: 0.707, beta: 0.707 },
-    alicePhoton: { x: 150, y: 200 },
-    bobPhoton: { x: 650, y: 200 },
-    classicalBits: '',
-    success: false
-  })
-  const [particles, setParticles] = useState<Particle[]>([])
+  const particlesRef = useRef<Particle[]>([])
+  const phaseRef = useRef<string>('idle')
+  const classicalBitsRef = useRef<string>('')
+  const timeRef = useRef(0)
+
+  const [phase, setPhase] = useState<string>('idle')
   const [showInfo, setShowInfo] = useState(false)
   const [teleportCount, setTeleportCount] = useState(0)
+  const [inputState] = useState({ alpha: 0.707, beta: 0.707 })
+
+  // Update refs when state changes
+  useEffect(() => {
+    phaseRef.current = phase
+  }, [phase])
 
   const createParticles = useCallback((x: number, y: number, color: string, count: number = 20) => {
     const newParticles: Particle[] = []
@@ -50,52 +44,48 @@ export default function TeleportationPage() {
         color
       })
     }
-    setParticles(prev => [...prev, ...newParticles])
+    particlesRef.current = [...particlesRef.current, ...newParticles]
   }, [])
 
   const runTeleportation = useCallback(() => {
-    setState(s => ({ ...s, phase: 'entangle' }))
+    setPhase('entangle')
     createParticles(400, 200, '#455DEC', 30)
 
     setTimeout(() => {
-      setState(s => ({ ...s, phase: 'encode' }))
+      setPhase('encode')
       createParticles(150, 200, '#F07362', 15)
     }, 1500)
 
     setTimeout(() => {
-      setState(s => ({ ...s, phase: 'measure', classicalBits: Math.random() > 0.5 ? '00' : Math.random() > 0.5 ? '01' : Math.random() > 0.5 ? '10' : '11' }))
+      const bits = ['00', '01', '10', '11'][Math.floor(Math.random() * 4)]
+      classicalBitsRef.current = bits
+      setPhase('measure')
       createParticles(250, 200, '#00D4FF', 25)
     }, 3000)
 
     setTimeout(() => {
-      setState(s => ({ ...s, phase: 'send' }))
+      setPhase('send')
     }, 4500)
 
     setTimeout(() => {
-      setState(s => ({ ...s, phase: 'reconstruct' }))
+      setPhase('reconstruct')
       createParticles(650, 200, '#00D4FF', 30)
     }, 6000)
 
     setTimeout(() => {
-      setState(s => ({ ...s, phase: 'complete', success: true }))
+      setPhase('complete')
       createParticles(650, 200, '#4CAF50', 40)
       setTeleportCount(c => c + 1)
     }, 7500)
   }, [createParticles])
 
-  const reset = () => {
-    setState({
-      phase: 'idle',
-      qubitState: { alpha: Math.random() * 0.3 + 0.5, beta: Math.random() * 0.3 + 0.5 },
-      alicePhoton: { x: 150, y: 200 },
-      bobPhoton: { x: 650, y: 200 },
-      classicalBits: '',
-      success: false
-    })
-    setParticles([])
-  }
+  const reset = useCallback(() => {
+    setPhase('idle')
+    particlesRef.current = []
+    classicalBitsRef.current = ''
+  }, [])
 
-  // Animation loop
+  // Animation loop - no dependencies that change
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -103,10 +93,13 @@ export default function TeleportationPage() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    let time = 0
-
     const animate = () => {
-      time += 0.02
+      timeRef.current += 0.02
+      const time = timeRef.current
+      const currentPhase = phaseRef.current
+      const classicalBits = classicalBitsRef.current
+
+      // Clear canvas
       ctx.fillStyle = '#0a0a0f'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
@@ -149,7 +142,7 @@ export default function TeleportationPage() {
       ctx.fillText('Bob', 650, 290)
 
       // Draw entanglement source in center
-      if (state.phase !== 'idle') {
+      if (currentPhase !== 'idle') {
         const sourceGlow = ctx.createRadialGradient(400, 200, 0, 400, 200, 40 + Math.sin(time * 3) * 10)
         sourceGlow.addColorStop(0, 'rgba(69, 93, 236, 0.8)')
         sourceGlow.addColorStop(0.5, 'rgba(69, 93, 236, 0.3)')
@@ -160,7 +153,7 @@ export default function TeleportationPage() {
         ctx.fill()
 
         // Entanglement lines
-        if (['entangle', 'encode', 'measure'].includes(state.phase)) {
+        if (['entangle', 'encode', 'measure'].includes(currentPhase)) {
           ctx.strokeStyle = `rgba(69, 93, 236, ${0.3 + Math.sin(time * 5) * 0.2})`
           ctx.lineWidth = 2
           ctx.setLineDash([5, 5])
@@ -174,12 +167,12 @@ export default function TeleportationPage() {
       }
 
       // Draw classical channel (when sending bits)
-      if (['send', 'reconstruct', 'complete'].includes(state.phase)) {
+      if (['send', 'reconstruct', 'complete'].includes(currentPhase)) {
         ctx.strokeStyle = '#FFD700'
         ctx.lineWidth = 3
         ctx.setLineDash([10, 5])
 
-        const progress = state.phase === 'send' ? (time % 1) : 1
+        const progress = currentPhase === 'send' ? (time % 1) : 1
         ctx.beginPath()
         ctx.moveTo(200, 100)
         ctx.lineTo(200 + (450 * progress), 100)
@@ -187,10 +180,10 @@ export default function TeleportationPage() {
         ctx.setLineDash([])
 
         // Classical bits indicator
-        if (state.classicalBits) {
+        if (classicalBits) {
           ctx.fillStyle = '#FFD700'
           ctx.font = '16px monospace'
-          ctx.fillText(`Classical: ${state.classicalBits}`, 400, 80)
+          ctx.fillText(`Classical: ${classicalBits}`, 400, 80)
         }
       }
 
@@ -219,36 +212,34 @@ export default function TeleportationPage() {
       }
 
       // Alice's input qubit (to teleport)
-      if (!['complete'].includes(state.phase)) {
-        drawQubit(120, 200, '#F07362', '|ψ⟩', state.phase === 'encode')
+      if (!['complete'].includes(currentPhase)) {
+        drawQubit(120, 200, '#F07362', '|ψ⟩', currentPhase === 'encode')
       }
 
       // Entangled pair
-      if (state.phase !== 'idle') {
-        if (!['complete'].includes(state.phase)) {
-          drawQubit(180, 200, '#455DEC', 'A', ['entangle', 'encode', 'measure'].includes(state.phase))
+      if (currentPhase !== 'idle') {
+        if (!['complete'].includes(currentPhase)) {
+          drawQubit(180, 200, '#455DEC', 'A', ['entangle', 'encode', 'measure'].includes(currentPhase))
         }
-        drawQubit(620, 200, '#455DEC', 'B', ['reconstruct', 'complete'].includes(state.phase))
+        drawQubit(620, 200, '#455DEC', 'B', ['reconstruct', 'complete'].includes(currentPhase))
       }
 
       // Teleported state at Bob
-      if (state.phase === 'complete') {
+      if (currentPhase === 'complete') {
         drawQubit(680, 200, '#4CAF50', '|ψ⟩', true)
       }
 
       // Update and draw particles
-      setParticles(prev => {
-        return prev.map(p => ({
-          ...p,
-          x: p.x + p.vx,
-          y: p.y + p.vy,
-          vx: p.vx * 0.98,
-          vy: p.vy * 0.98,
-          life: p.life - 0.02
-        })).filter(p => p.life > 0)
-      })
+      particlesRef.current = particlesRef.current.map(p => ({
+        ...p,
+        x: p.x + p.vx,
+        y: p.y + p.vy,
+        vx: p.vx * 0.98,
+        vy: p.vy * 0.98,
+        life: p.life - 0.02
+      })).filter(p => p.life > 0)
 
-      particles.forEach(p => {
+      particlesRef.current.forEach(p => {
         ctx.globalAlpha = p.life
         ctx.fillStyle = p.color
         ctx.beginPath()
@@ -268,10 +259,10 @@ export default function TeleportationPage() {
         complete: 'Teleportation complete!'
       }
 
-      ctx.fillStyle = state.phase === 'complete' ? '#4CAF50' : '#455DEC'
+      ctx.fillStyle = currentPhase === 'complete' ? '#4CAF50' : '#455DEC'
       ctx.font = '14px monospace'
       ctx.textAlign = 'center'
-      ctx.fillText(phaseLabels[state.phase], 400, 350)
+      ctx.fillText(phaseLabels[currentPhase] || '', 400, 350)
 
       animationRef.current = requestAnimationFrame(animate)
     }
@@ -283,7 +274,7 @@ export default function TeleportationPage() {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [state.phase, state.classicalBits, particles])
+  }, [])
 
   return (
     <div className="p-6">
@@ -315,7 +306,7 @@ export default function TeleportationPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={runTeleportation}
-            disabled={state.phase !== 'idle'}
+            disabled={phase !== 'idle'}
             className="btn-primary flex items-center gap-2 py-2.5 disabled:opacity-50"
           >
             <Send className="w-4 h-4" /> Teleport
@@ -369,7 +360,7 @@ export default function TeleportationPage() {
         <div className="card p-4">
           <div className="text-sm text-white/50 mb-1">Input State</div>
           <div className="font-mono text-lg">
-            |ψ⟩ = {state.qubitState.alpha.toFixed(2)}|0⟩ + {state.qubitState.beta.toFixed(2)}|1⟩
+            |ψ⟩ = {inputState.alpha.toFixed(2)}|0⟩ + {inputState.beta.toFixed(2)}|1⟩
           </div>
         </div>
         <div className="card p-4 text-center">
@@ -379,7 +370,7 @@ export default function TeleportationPage() {
         <div className="card p-4">
           <div className="text-sm text-white/50 mb-1">Fidelity</div>
           <div className="text-2xl font-bold text-[#4CAF50]">
-            {state.success ? '100%' : '--'}
+            {phase === 'complete' ? '100%' : '--'}
           </div>
           <div className="text-xs text-white/30">Theoretical: Perfect</div>
         </div>

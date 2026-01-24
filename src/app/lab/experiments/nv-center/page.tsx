@@ -2,13 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Play, Pause, RotateCcw, Info, X, Zap, Radio } from 'lucide-react'
-
-interface NVState {
-  spin: number // 0, +1, or -1
-  coherence: number // 0 to 1
-  opticallyPumped: boolean
-}
+import { RotateCcw, Info, X, Zap, Radio, Play } from 'lucide-react'
 
 interface Photon {
   id: number
@@ -16,25 +10,24 @@ interface Photon {
   y: number
   vx: number
   vy: number
-  wavelength: number // 532nm green or 637nm red
+  wavelength: number
   life: number
 }
 
 export default function NVCenterPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const animationRef = useRef<number | null>(null)
-  const [nvState, setNVState] = useState<NVState>({
-    spin: 0,
-    coherence: 1,
-    opticallyPumped: false
-  })
-  const [photons, setPhotons] = useState<Photon[]>([])
-  const [showInfo, setShowInfo] = useState(false)
-  const [isRunning, setIsRunning] = useState(false)
-  const [microwaveOn, setMicrowaveOn] = useState(false)
-  const [laserOn, setLaserOn] = useState(false)
-  const [stats, setStats] = useState({ reads: 0, spinUp: 0, spinDown: 0 })
+  const photonsRef = useRef<Photon[]>([])
+  const timeRef = useRef(0)
   const idRef = useRef(0)
+
+  const [spin, setSpin] = useState(0)
+  const [coherence, setCoherence] = useState(1)
+  const [opticallyPumped, setOpticallyPumped] = useState(false)
+  const [laserOn, setLaserOn] = useState(false)
+  const [microwaveOn, setMicrowaveOn] = useState(false)
+  const [showInfo, setShowInfo] = useState(false)
+  const [stats, setStats] = useState({ reads: 0, spinUp: 0, spinDown: 0 })
 
   const emitPhoton = useCallback((wavelength: number, fromCenter = true) => {
     const angle = Math.random() * Math.PI * 2
@@ -42,7 +35,7 @@ export default function NVCenterPage() {
     const startX = fromCenter ? 400 : 400 + (Math.random() - 0.5) * 40
     const startY = fromCenter ? 200 : 200 + (Math.random() - 0.5) * 40
 
-    setPhotons(prev => [...prev, {
+    photonsRef.current.push({
       id: idRef.current++,
       x: startX,
       y: startY,
@@ -50,7 +43,7 @@ export default function NVCenterPage() {
       vy: Math.sin(angle) * speed,
       wavelength,
       life: 1
-    }])
+    })
   }, [])
 
   const pumpLaser = useCallback(() => {
@@ -61,7 +54,8 @@ export default function NVCenterPage() {
     }
 
     setTimeout(() => {
-      setNVState(s => ({ ...s, opticallyPumped: true, spin: 0 }))
+      setOpticallyPumped(true)
+      setSpin(0)
       setLaserOn(false)
     }, 500)
   }, [emitPhoton])
@@ -69,37 +63,36 @@ export default function NVCenterPage() {
   const applyMicrowave = useCallback(() => {
     setMicrowaveOn(true)
     setTimeout(() => {
-      setNVState(s => ({
-        ...s,
-        spin: Math.random() > 0.5 ? 1 : -1,
-        coherence: Math.max(0, s.coherence - 0.1)
-      }))
+      setSpin(Math.random() > 0.5 ? 1 : -1)
+      setCoherence(c => Math.max(0, c - 0.1))
       setMicrowaveOn(false)
     }, 800)
   }, [])
 
   const readout = useCallback(() => {
     // Emit red fluorescence photons
-    const numPhotons = nvState.spin === 0 ? 8 : 3 // More photons for spin-0 state
+    const numPhotons = spin === 0 ? 8 : 3 // More photons for spin-0 state
     for (let i = 0; i < numPhotons; i++) {
       setTimeout(() => emitPhoton(637, true), i * 50)
     }
 
     setStats(s => ({
       reads: s.reads + 1,
-      spinUp: s.spinUp + (nvState.spin === 0 ? 1 : 0),
-      spinDown: s.spinDown + (nvState.spin !== 0 ? 1 : 0)
+      spinUp: s.spinUp + (spin === 0 ? 1 : 0),
+      spinDown: s.spinDown + (spin !== 0 ? 1 : 0)
     }))
-  }, [nvState.spin, emitPhoton])
+  }, [spin, emitPhoton])
 
-  const reset = () => {
-    setNVState({ spin: 0, coherence: 1, opticallyPumped: false })
-    setPhotons([])
+  const reset = useCallback(() => {
+    setSpin(0)
+    setCoherence(1)
+    setOpticallyPumped(false)
     setLaserOn(false)
     setMicrowaveOn(false)
-  }
+    photonsRef.current = []
+  }, [])
 
-  // Animation loop
+  // Animation loop - minimal dependencies
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -107,10 +100,11 @@ export default function NVCenterPage() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    let time = 0
-
     const animate = () => {
-      time += 0.02
+      timeRef.current += 0.02
+      const time = timeRef.current
+
+      // Clear canvas
       ctx.fillStyle = '#0a0a0f'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
@@ -129,14 +123,12 @@ export default function NVCenterPage() {
         }
       }
 
-      // Draw NV center
+      // Draw NV center glow
+      let nvColor = 'rgba(69, 93, 236, 0.8)'
+      if (opticallyPumped) nvColor = 'rgba(0, 212, 255, 0.8)'
+      if (microwaveOn) nvColor = 'rgba(240, 115, 98, 0.8)'
+
       const nvGlow = ctx.createRadialGradient(400, 200, 0, 400, 200, 60 + Math.sin(time * 3) * 10)
-
-      // Color based on state
-      let nvColor = 'rgba(69, 93, 236, 0.8)' // Default blue
-      if (nvState.opticallyPumped) nvColor = 'rgba(0, 212, 255, 0.8)' // Cyan when pumped
-      if (microwaveOn) nvColor = 'rgba(240, 115, 98, 0.8)' // Orange during microwave
-
       nvGlow.addColorStop(0, nvColor)
       nvGlow.addColorStop(0.5, nvColor.replace('0.8', '0.3'))
       nvGlow.addColorStop(1, 'transparent')
@@ -146,7 +138,7 @@ export default function NVCenterPage() {
       ctx.fill()
 
       // Draw N and V atoms
-      ctx.fillStyle = '#4CAF50' // Nitrogen - green
+      ctx.fillStyle = '#4CAF50'
       ctx.beginPath()
       ctx.arc(390, 195, 12, 0, Math.PI * 2)
       ctx.fill()
@@ -155,7 +147,7 @@ export default function NVCenterPage() {
       ctx.textAlign = 'center'
       ctx.fillText('N', 390, 198)
 
-      ctx.fillStyle = '#1a1a2e' // Vacancy - dark
+      ctx.fillStyle = '#1a1a2e'
       ctx.beginPath()
       ctx.arc(410, 205, 12, 0, Math.PI * 2)
       ctx.fill()
@@ -174,10 +166,9 @@ export default function NVCenterPage() {
         ctx.fillStyle = laserGrad
         ctx.fillRect(50, 195, 350, 10)
 
-        // Laser source
         ctx.fillStyle = '#00FF00'
         ctx.fillRect(30, 180, 30, 40)
-        ctx.fillStyle = 'black'
+        ctx.fillStyle = 'white'
         ctx.font = '10px monospace'
         ctx.fillText('532nm', 45, 240)
       }
@@ -206,19 +197,16 @@ export default function NVCenterPage() {
       ctx.fillText('Detector', 730, 270)
 
       // Update and draw photons
-      setPhotons(prev => {
-        return prev.map(p => ({
-          ...p,
-          x: p.x + p.vx,
-          y: p.y + p.vy,
-          life: p.life - 0.015
-        })).filter(p => p.life > 0 && p.x > 0 && p.x < 800 && p.y > 0 && p.y < 400)
-      })
+      photonsRef.current = photonsRef.current.map(p => ({
+        ...p,
+        x: p.x + p.vx,
+        y: p.y + p.vy,
+        life: p.life - 0.015
+      })).filter(p => p.life > 0 && p.x > 0 && p.x < 800 && p.y > 0 && p.y < 400)
 
-      photons.forEach(p => {
-        const color = p.wavelength === 532 ? '#00FF00' : '#FF3366' // Green or red
+      photonsRef.current.forEach(p => {
+        const color = p.wavelength === 532 ? '#00FF00' : '#FF3366'
 
-        // Photon glow
         const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 15)
         glow.addColorStop(0, color + 'cc')
         glow.addColorStop(0.5, color + '40')
@@ -228,7 +216,6 @@ export default function NVCenterPage() {
         ctx.arc(p.x, p.y, 15, 0, Math.PI * 2)
         ctx.fill()
 
-        // Photon core
         ctx.globalAlpha = p.life
         ctx.fillStyle = color
         ctx.beginPath()
@@ -243,7 +230,6 @@ export default function NVCenterPage() {
       ctx.fillStyle = 'white'
       ctx.font = '12px monospace'
 
-      // Ground state triplet
       const levelX = 150
       ctx.beginPath()
       ctx.moveTo(levelX - 30, 320)
@@ -258,13 +244,12 @@ export default function NVCenterPage() {
       ctx.fillText('ms = ±1', levelX, 275)
 
       // Highlight current state
-      const currentY = nvState.spin === 0 ? 320 : 280
-      ctx.fillStyle = nvState.spin === 0 ? '#00D4FF' : '#F07362'
+      const currentY = spin === 0 ? 320 : 280
+      ctx.fillStyle = spin === 0 ? '#00D4FF' : '#F07362'
       ctx.beginPath()
       ctx.arc(levelX, currentY, 6, 0, Math.PI * 2)
       ctx.fill()
 
-      // Labels
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
       ctx.font = '11px monospace'
       ctx.textAlign = 'center'
@@ -280,7 +265,7 @@ export default function NVCenterPage() {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [nvState, photons, laserOn, microwaveOn])
+  }, [spin, opticallyPumped, laserOn, microwaveOn])
 
   return (
     <div className="p-6">
@@ -327,7 +312,7 @@ export default function NVCenterPage() {
           <div className="grid md:grid-cols-3 gap-4 text-sm text-white/70">
             <div>
               <p className="font-medium text-white mb-1">What is an NV Center?</p>
-              <p>A nitrogen atom next to a vacancy in a diamond crystal. Its electron spin can be used as a qubit that works at room temperature.</p>
+              <p>A nitrogen atom next to a vacancy in a diamond crystal. Its electron spin can be used as a qubit at room temperature.</p>
             </div>
             <div>
               <p className="font-medium text-white mb-1">Optical Pumping</p>
@@ -349,7 +334,7 @@ export default function NVCenterPage() {
             whileTap={{ scale: 0.98 }}
             onClick={pumpLaser}
             disabled={laserOn}
-            className="btn-primary flex items-center gap-2 py-2.5 disabled:opacity-50"
+            className="px-4 py-2.5 rounded-lg text-white font-medium disabled:opacity-50 flex items-center gap-2"
             style={{ background: '#00AA00' }}
           >
             <Zap className="w-4 h-4" /> Pump (532nm)
@@ -359,7 +344,7 @@ export default function NVCenterPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={applyMicrowave}
-            disabled={microwaveOn || !nvState.opticallyPumped}
+            disabled={microwaveOn || !opticallyPumped}
             className="px-4 py-2.5 rounded-lg bg-[#F07362] text-white font-medium disabled:opacity-50 flex items-center gap-2"
           >
             <Radio className="w-4 h-4" /> Microwave π
@@ -369,16 +354,17 @@ export default function NVCenterPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={readout}
-            disabled={!nvState.opticallyPumped}
-            className="px-4 py-2.5 rounded-lg bg-[#FF3366] text-white font-medium disabled:opacity-50 flex items-center gap-2"
+            disabled={!opticallyPumped}
+            className="px-4 py-2.5 rounded-lg text-white font-medium disabled:opacity-50 flex items-center gap-2"
+            style={{ background: '#FF3366' }}
           >
             <Play className="w-4 h-4" /> Readout (637nm)
           </motion.button>
 
           <div className="ml-auto text-sm">
             <span className="text-white/50">Spin State: </span>
-            <span className={`font-mono ${nvState.spin === 0 ? 'text-[#00D4FF]' : 'text-[#F07362]'}`}>
-              ms = {nvState.spin === 0 ? '0' : nvState.spin === 1 ? '+1' : '-1'}
+            <span className={`font-mono ${spin === 0 ? 'text-[#00D4FF]' : 'text-[#F07362]'}`}>
+              ms = {spin === 0 ? '0' : spin === 1 ? '+1' : '-1'}
             </span>
           </div>
         </div>
@@ -416,7 +402,7 @@ export default function NVCenterPage() {
           </div>
         </div>
         <div className="card p-4 text-center">
-          <div className="text-3xl font-bold text-[#4CAF50]">{(nvState.coherence * 100).toFixed(0)}%</div>
+          <div className="text-3xl font-bold text-[#4CAF50]">{(coherence * 100).toFixed(0)}%</div>
           <div className="text-sm text-white/50">Coherence</div>
         </div>
       </div>

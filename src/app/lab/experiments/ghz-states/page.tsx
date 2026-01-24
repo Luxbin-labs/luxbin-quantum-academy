@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Play, Pause, RotateCcw, Info, X, Atom } from 'lucide-react'
+import { RotateCcw, Info, X, Atom } from 'lucide-react'
 
 interface GHZParticle {
   id: number
@@ -10,7 +10,6 @@ interface GHZParticle {
   y: number
   targetX: number
   targetY: number
-  angle: number
   spin: 'up' | 'down'
   measured: boolean
 }
@@ -27,13 +26,15 @@ interface Flash {
 export default function GHZStatesPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const animationRef = useRef<number | null>(null)
-  const [particles, setParticles] = useState<GHZParticle[]>([])
-  const [flashes, setFlashes] = useState<Flash[]>([])
+  const particlesRef = useRef<GHZParticle[]>([])
+  const flashesRef = useRef<Flash[]>([])
+  const timeRef = useRef(0)
+  const idRef = useRef(0)
+
   const [numQubits, setNumQubits] = useState(3)
   const [showInfo, setShowInfo] = useState(false)
-  const [isAnimating, setIsAnimating] = useState(false)
   const [stats, setStats] = useState({ created: 0, allUp: 0, allDown: 0 })
-  const idRef = useRef(0)
+  const [hasMeasured, setHasMeasured] = useState(false)
 
   const getDetectorPositions = useCallback((count: number) => {
     const positions: { x: number; y: number }[] = []
@@ -56,14 +57,14 @@ export default function GHZStatesPage() {
     const spin = Math.random() > 0.5 ? 'up' : 'down' as const
 
     // Create center flash
-    setFlashes(prev => [...prev, {
+    flashesRef.current.push({
       id: idRef.current++,
       x: 400,
       y: 200,
       radius: 10,
       opacity: 1,
       color: '#455DEC'
-    }])
+    })
 
     const newParticles: GHZParticle[] = positions.map((pos, i) => ({
       id: idRef.current++,
@@ -71,52 +72,50 @@ export default function GHZStatesPage() {
       y: 200,
       targetX: pos.x,
       targetY: pos.y,
-      angle: (Math.PI * 2 * i) / numQubits - Math.PI / 2,
       spin,
       measured: false
     }))
 
-    setParticles(newParticles)
-    setIsAnimating(true)
+    particlesRef.current = newParticles
     setStats(s => ({ ...s, created: s.created + 1 }))
+    setHasMeasured(false)
   }, [numQubits, getDetectorPositions])
 
   const measureAll = useCallback(() => {
-    setParticles(prev => {
-      const allSpin = prev[0]?.spin
-      const allSame = prev.every(p => p.spin === allSpin)
+    const particles = particlesRef.current
+    if (particles.length === 0 || particles[0].measured) return
 
-      if (allSame) {
-        if (allSpin === 'up') {
-          setStats(s => ({ ...s, allUp: s.allUp + 1 }))
-        } else {
-          setStats(s => ({ ...s, allDown: s.allDown + 1 }))
-        }
-      }
+    const allSpin = particles[0].spin
 
-      // Create measurement flashes at each detector
-      prev.forEach(p => {
-        setFlashes(f => [...f, {
-          id: idRef.current++,
-          x: p.targetX,
-          y: p.targetY,
-          radius: 10,
-          opacity: 1,
-          color: p.spin === 'up' ? '#00D4FF' : '#F07362'
-        }])
+    if (allSpin === 'up') {
+      setStats(s => ({ ...s, allUp: s.allUp + 1 }))
+    } else {
+      setStats(s => ({ ...s, allDown: s.allDown + 1 }))
+    }
+
+    // Create measurement flashes at each detector
+    particles.forEach(p => {
+      flashesRef.current.push({
+        id: idRef.current++,
+        x: p.targetX,
+        y: p.targetY,
+        radius: 10,
+        opacity: 1,
+        color: p.spin === 'up' ? '#00D4FF' : '#F07362'
       })
-
-      return prev.map(p => ({ ...p, measured: true }))
     })
+
+    particlesRef.current = particles.map(p => ({ ...p, measured: true }))
+    setHasMeasured(true)
   }, [])
 
-  const reset = () => {
-    setParticles([])
-    setFlashes([])
-    setIsAnimating(false)
-  }
+  const reset = useCallback(() => {
+    particlesRef.current = []
+    flashesRef.current = []
+    setHasMeasured(false)
+  }, [])
 
-  // Animation loop
+  // Animation loop - no state dependencies
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -124,14 +123,14 @@ export default function GHZStatesPage() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    let time = 0
-
     const animate = () => {
-      time += 0.02
+      timeRef.current += 0.02
+      const time = timeRef.current
+      const positions = getDetectorPositions(numQubits)
+
+      // Clear canvas
       ctx.fillStyle = '#0a0a0f'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-      const positions = getDetectorPositions(numQubits)
 
       // Draw center source
       const sourceGlow = ctx.createRadialGradient(400, 200, 0, 400, 200, 50 + Math.sin(time * 3) * 10)
@@ -177,6 +176,7 @@ export default function GHZStatesPage() {
       })
 
       // Draw entanglement web when particles exist
+      const particles = particlesRef.current
       if (particles.length > 0 && !particles[0].measured) {
         ctx.strokeStyle = `rgba(69, 93, 236, ${0.3 + Math.sin(time * 4) * 0.2})`
         ctx.lineWidth = 1
@@ -194,29 +194,27 @@ export default function GHZStatesPage() {
         ctx.setLineDash([])
       }
 
-      // Update and draw particles
-      setParticles(prev => {
-        return prev.map(p => {
-          if (p.measured) return p
+      // Update particles
+      particlesRef.current = particles.map(p => {
+        if (p.measured) return p
 
-          const dx = p.targetX - p.x
-          const dy = p.targetY - p.y
-          const dist = Math.sqrt(dx * dx + dy * dy)
+        const dx = p.targetX - p.x
+        const dy = p.targetY - p.y
+        const dist = Math.sqrt(dx * dx + dy * dy)
 
-          if (dist < 5) {
-            return { ...p, x: p.targetX, y: p.targetY }
-          }
+        if (dist < 5) {
+          return { ...p, x: p.targetX, y: p.targetY }
+        }
 
-          return {
-            ...p,
-            x: p.x + dx * 0.05,
-            y: p.y + dy * 0.05
-          }
-        })
+        return {
+          ...p,
+          x: p.x + dx * 0.05,
+          y: p.y + dy * 0.05
+        }
       })
 
       // Draw particles
-      particles.forEach(p => {
+      particlesRef.current.forEach(p => {
         const color = p.measured
           ? (p.spin === 'up' ? '#00D4FF' : '#F07362')
           : '#455DEC'
@@ -247,15 +245,13 @@ export default function GHZStatesPage() {
       })
 
       // Draw and update flashes
-      setFlashes(prev => {
-        return prev.map(f => ({
-          ...f,
-          radius: f.radius + 4,
-          opacity: f.opacity - 0.03
-        })).filter(f => f.opacity > 0)
-      })
+      flashesRef.current = flashesRef.current.map(f => ({
+        ...f,
+        radius: f.radius + 4,
+        opacity: f.opacity - 0.03
+      })).filter(f => f.opacity > 0)
 
-      flashes.forEach(f => {
+      flashesRef.current.forEach(f => {
         const gradient = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.radius)
         gradient.addColorStop(0, f.color + Math.floor(f.opacity * 255).toString(16).padStart(2, '0'))
         gradient.addColorStop(1, 'transparent')
@@ -269,7 +265,7 @@ export default function GHZStatesPage() {
       ctx.fillStyle = 'white'
       ctx.font = '14px monospace'
       ctx.textAlign = 'center'
-      const stateNotation = `|GHZ₃⟩ = (|${'0'.repeat(numQubits)}⟩ + |${'1'.repeat(numQubits)}⟩) / √2`
+      const stateNotation = `|GHZ${numQubits}⟩ = (|${'0'.repeat(numQubits)}⟩ + |${'1'.repeat(numQubits)}⟩) / √2`
       ctx.fillText(stateNotation, 400, 380)
 
       animationRef.current = requestAnimationFrame(animate)
@@ -282,7 +278,7 @@ export default function GHZStatesPage() {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [numQubits, particles, flashes, getDetectorPositions])
+  }, [numQubits, getDetectorPositions])
 
   return (
     <div className="p-6">
@@ -314,8 +310,7 @@ export default function GHZStatesPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={createGHZState}
-            disabled={isAnimating && particles.length > 0 && !particles[0]?.measured}
-            className="btn-primary flex items-center gap-2 py-2.5 disabled:opacity-50"
+            className="btn-primary flex items-center gap-2 py-2.5"
           >
             <Atom className="w-4 h-4" /> Create GHZ
           </motion.button>
@@ -323,7 +318,7 @@ export default function GHZStatesPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={measureAll}
-            disabled={particles.length === 0 || particles[0]?.measured}
+            disabled={particlesRef.current.length === 0 || hasMeasured}
             className="px-4 py-2.5 rounded-lg bg-[#00D4FF] text-black font-medium disabled:opacity-50"
           >
             Measure All
@@ -347,11 +342,11 @@ export default function GHZStatesPage() {
           <div className="grid md:grid-cols-2 gap-4 text-sm text-white/70">
             <div>
               <p className="font-medium text-white mb-1">What is a GHZ State?</p>
-              <p>Named after Greenberger-Horne-Zeilinger, these are maximally entangled states of 3+ qubits. When measured, all qubits collapse to the same value (all 0s or all 1s).</p>
+              <p>Named after Greenberger-Horne-Zeilinger, these are maximally entangled states of 3+ qubits. When measured, all qubits collapse to the same value.</p>
             </div>
             <div>
               <p className="font-medium text-white mb-1">Quantum Correlations</p>
-              <p>GHZ states demonstrate non-classical correlations that cannot be explained by local hidden variables, proving quantum mechanics.</p>
+              <p>GHZ states demonstrate non-classical correlations that cannot be explained by local hidden variables.</p>
             </div>
           </div>
         </motion.div>
