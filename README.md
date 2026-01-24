@@ -1,6 +1,19 @@
-# LUXBIN Quantum Academy
+<div align="center">
 
-An interactive educational platform for learning photonic quantum computing, inspired by Quandela's Learning Hub.
+# 🔮 LUXBIN Quantum Academy
+
+**An interactive educational platform for learning photonic quantum computing**
+
+[![Live Demo](https://img.shields.io/badge/🚀_LIVE_DEMO-luxbin--quantum--academy.vercel.app-00d4ff?style=for-the-badge&labelColor=000000)](https://luxbin-quantum-academy.vercel.app)
+[![GitHub](https://img.shields.io/badge/GitHub-nichechristie-181717?style=for-the-badge&logo=github)](https://github.com/nichechristie/luxbin-quantum-academy)
+
+**[👉 Launch the Academy →](https://luxbin-quantum-academy.vercel.app)**
+
+*Inspired by Quandela's Learning Hub*
+
+</div>
+
+---
 
 ## Features
 
