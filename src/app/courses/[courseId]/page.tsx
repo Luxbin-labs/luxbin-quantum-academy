@@ -20,6 +20,19 @@ const courseData: Record<string, {
     completed?: boolean
   }[]
 }> = {
+  'introduction-to-luxbin': {
+    title: 'Introduction to LUXBIN',
+    description: 'Discover the LUXBIN Quantum Internet Protocol and its vision for the future',
+    color: 'from-[#455DEC] to-[#00D4FF]',
+    lessons: [
+      { id: '1', title: 'What is LUXBIN?', type: 'video', duration: '15 min' },
+      { id: '2', title: 'The Vision of Quantum Internet', type: 'reading', duration: '20 min' },
+      { id: '3', title: 'LUXBIN Light Language Protocol', type: 'video', duration: '25 min' },
+      { id: '4', title: 'Understanding EIP Protocols', type: 'reading', duration: '20 min' },
+      { id: '5', title: 'LUXBIN Architecture & Components', type: 'video', duration: '22 min' },
+      { id: '6', title: 'Final Quiz: LUXBIN Fundamentals', type: 'quiz', duration: '30 min' },
+    ],
+  },
   'quantum-fundamentals': {
     title: 'Quantum Fundamentals',
     description: 'Master the core concepts of quantum mechanics and quantum computing',

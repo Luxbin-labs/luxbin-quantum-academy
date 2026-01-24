@@ -7,6 +7,18 @@ import { useCourseStore } from '@/lib/stores/courseStore'
 
 const courses = [
   {
+    id: 'introduction-to-luxbin',
+    title: 'Introduction to LUXBIN',
+    description: 'Discover the LUXBIN Quantum Internet Protocol and its vision for the future',
+    level: 'Beginner',
+    lessons: 6,
+    duration: '2.5 hours',
+    image: '/courses/luxbin.jpg',
+    color: 'from-[#455DEC] to-[#00D4FF]',
+    topics: ['LUXBIN Vision', 'Quantum Internet', 'Light Language', 'EIP Protocols'],
+    unlocked: true,
+  },
+  {
     id: 'quantum-fundamentals',
     title: 'Quantum Fundamentals',
     description: 'Master the core concepts of quantum mechanics and quantum computing',
