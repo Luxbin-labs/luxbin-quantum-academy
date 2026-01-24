@@ -354,12 +354,13 @@ export default function TeleportationPage() {
       )}
 
       {/* Canvas */}
-      <div className="lab-canvas mb-6">
+      <div className="lab-canvas mb-6 p-4" style={{ minHeight: '420px' }}>
         <canvas
           ref={canvasRef}
           width={800}
           height={400}
           className="w-full rounded-lg"
+          style={{ background: '#0a0a0f', display: 'block' }}
         />
       </div>
 
